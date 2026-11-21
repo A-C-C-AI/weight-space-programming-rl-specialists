@@ -5,6 +5,7 @@ Suppose two reinforcement-learning policies each perform well in the conditions 
 I think of the specialists as two **performance peaks**. The bridge I want is behavioral: one policy keeps the endpoint skills and succeeds where both specialists struggled. Establishing that the training objective has two distinct local maxima, or finding a continuous path of high reward through parameter space, would require a separate measurement.
 
 I tested the idea in two stages with a simulated robot arm. The first asked whether a writer could bridge a gap between target locations. The second asked the harder question: *did the writer find something shared in the original policies, and did amplifying it cause better generalization?* Both stages used existing endpoint examples. The writers could fit weights offline; the hidden conditions supplied neither rewards nor practice episodes for the edit.
+The repository includes the reaching pilot’s score table and a runnable replay of the sideways-push experiment
 
 ## First, establish a gap worth bridging
 
