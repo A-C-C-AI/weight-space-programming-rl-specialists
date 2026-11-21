@@ -1,0 +1,40 @@
+Blind prediction | frozen before simulator evaluation
+
+I predict that neutral + delta will have the lowest median absolute lateral return error two actions after release and the highest fraction of returns within 2 cm. Neutral should rank second and neutral - delta third. I expect this ordering at both endpoints and in the pooled intermediate conditions, for both push signs. I expect most amplified trials to reach the final goal. Weakening the response should cost the most goal successes when a late push leaves little time to recover.
+
+What the two specialists compute
+
+I number channels from zero. Both policies read a lateral displacement spread over the six sensors and apply negative feedback through action[0]. To separate displacement from motion, I took the three-dimensional span of centered initial observations within each endpoint. Projecting the positive-minus-negative observation difference one step after pulse onset into that span, then normalizing, gives the lateral position direction p = (0.682, 0.118, 0.266, 0.089, 0.622, -0.233). The normalized residual gives a motion direction v = (-0.444, 0.553, -0.222, -0.354, 0.561, 0.087). Across paired pulse contrasts, the change in the p projection equals the new v projection. This identifies a displacement in observation units. I did not assume those units were centimeters.
+
+At the first free action, the mean derivative of the pre-tanh lateral output along p was approximately -0.83 across specialists. The logged command differences below subtract the same scenario's undisturbed command at pulse_start + 2. Each entry averages 20 scenarios.
+
+                           negative push      positive push
+Original A                     +0.115             -0.112
+Original B                     +0.114             -0.112
+
+All 80 contrasts had the predicted sign. The largest absolute mean contrast in either of the other action channels was 0.012. The matched lateral displacement at release was about 0.151 observation units in each specialist (half the positive-minus-negative separation). Two actions later it still averaged about 0.108. The sign was appropriate, but the original gain removed only part of the displacement by the deadline.
+
+Neutral controller and gain edit
+
+I started from the parameter midpoint. I retained the first layer and 31 second-layer feature columns. In second-layer unit 21, I encoded the centered p projection from the common first-layer activations, using the pooled undisturbed terminal position as its origin. I assigned this feature 77% of the pooled local lateral gain, with a readout only to action[0]. I fitted the remaining output weights and biases to the logged actions and the supplied probe actions. At each probe, I blended the two supplied labels by proximity to the endpoint traces after removing the two lateral directions. In a check omitting five paired scenario IDs from trace fitting, the neutral action[0] RMSE on those trace IDs was 0.00071 in A and 0.00072 in B. The final fit used all 20 pairs.
+
+Delta changes 34 of 1,379 scalars (2.47%): the 32 incoming weights and bias of unit 21, and its one lateral readout weight. At plus, the incoming affine signal scales by 2.50 and the outgoing weight by 2.74. At minus, the factors are -0.50 and -0.74, leaving a weaker same-sign local feedback path. The rest of the lateral readout supplies residual feedback. The larger gain was chosen because the original policies left most of the error after two actions. Editing both sides of one feature makes a strong amplified response compatible with a still-restoring weakened setting.
+
+First-action and overshoot predictions
+
+At every setting, I predict a positive command difference after a negative push and a negative difference after a positive push. On the supplied release observations, the frozen controllers give these mean action[0] differences. These are fixed-input measurements. The evaluator's controllers will generate their own trajectories.
+
+                          A negative   A positive   B negative   B positive
+neutral - delta             +0.054       -0.053       +0.054       -0.053
+neutral                     +0.115       -0.112       +0.114       -0.112
+neutral + delta             +0.576       -0.580       +0.583       -0.574
+
+I expect the amplified controller to return close to the undisturbed trajectory by the two-action deadline, often just crossing it. I predict a small, brief overshoot on the side opposite the push, followed by settling. I expect the neutral and weakened controllers usually to remain on the pushed side at that deadline. Sustained oscillation or a large loss of final goal success under amplification would contradict the proposed gain calibration.
+
+Restoration test in the original specialists
+
+The common mask selects 16 W3[:,0] coefficients (1.16% of parameters). For each unit, I multiplied its signed release activation contrast by its readout change from common initialization. I ranked the coefficients by the smaller opposing contribution across A and B. The mask identifies the distributed readout in the original specialists. Unit 21 in the combined controller is where I consolidated the tunable position component.
+
+Restoring the mask on the supplied observations changed the mean negative/positive push corrections to +0.019/-0.019 in A and +0.028/-0.028 in B. The loss in half the signed command separation was 0.095 in A and 0.085 in B. Across 1,000 random 16-coefficient masks drawn from the same lateral readout, median losses were 0.059 and 0.058. I predict that restoration will likewise reduce the opposing command in both original specialists on unseen trials, increase their two-action error, and impair late-push goal success more than a typical matched random mask.
+
+A result that would falsify the shared-readout account is a near-intact first correction after restoration in either original specialist, with the nominated mask performing no worse than typical matched random masks on new paired pushes. A distinct failure would be stronger appropriately signed first commands under amplification accompanied by larger median two-action error than neutral. That would reject the rapid-return prediction even if the response was correctly identified.
